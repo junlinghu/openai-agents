@@ -28,21 +28,6 @@ source env/bin/activate
 pip install openai-agents
 ```
 
-## Hello world example
-
-```python
-from agents import Agent, Runner
-
-agent = Agent(name="Assistant", instructions="You are a helpful assistant")
-
-result = Runner.run_sync(agent, "Write a haiku about recursion in programming.")
-print(result.final_output)
-
-```
-
-(_For Jupyter notebook users, see [hello_world_jupyter.py](examples/basic/hello_world_jupyter.py)_)
-
-
 ## The agent loop
 
 When you call `Runner.run()`, we run a loop until we get a final output.
