@@ -108,52 +108,46 @@ class Handoff(Generic[TContext]):
 
     @classmethod
     def default_tool_description(cls, agent: Agent[Any]) -> str:
-        return (
-            f"Handoff to the {agent.name} agent to handle the request. "
-            f"{agent.handoff_description or ''}"
-        )
+        return (f"Handoff to the {agent.name} agent to handle the request. "
+                f"{agent.handoff_description or ''}")
 
 
 @overload
-def handoff(
-    agent: Agent[TContext],
-    *,
-    tool_name_override: str | None = None,
-    tool_description_override: str | None = None,
-    input_filter: Callable[[HandoffInputData], HandoffInputData] | None = None,
+def handoff(agent: Agent[TContext],
+            *,
+            tool_name_override: str | None = None,
+            tool_description_override: str | None = None,
+            input_filter: Callable[[HandoffInputData], HandoffInputData] | None = None,
 ) -> Handoff[TContext]: ...
 
 
 @overload
-def handoff(
-    agent: Agent[TContext],
-    *,
-    on_handoff: OnHandoffWithInput[THandoffInput],
-    input_type: type[THandoffInput],
-    tool_description_override: str | None = None,
-    tool_name_override: str | None = None,
-    input_filter: Callable[[HandoffInputData], HandoffInputData] | None = None,
+def handoff(agent: Agent[TContext],
+            *,
+            on_handoff: OnHandoffWithInput[THandoffInput],
+            input_type: type[THandoffInput],
+            tool_description_override: str | None = None,
+            tool_name_override: str | None = None,
+            input_filter: Callable[[HandoffInputData], HandoffInputData] | None = None,
 ) -> Handoff[TContext]: ...
 
 
 @overload
-def handoff(
-    agent: Agent[TContext],
-    *,
-    on_handoff: OnHandoffWithoutInput,
-    tool_description_override: str | None = None,
-    tool_name_override: str | None = None,
-    input_filter: Callable[[HandoffInputData], HandoffInputData] | None = None,
+def handoff(agent: Agent[TContext],
+            *,
+            on_handoff: OnHandoffWithoutInput,
+            tool_description_override: str | None = None,
+            tool_name_override: str | None = None,
+            input_filter: Callable[[HandoffInputData], HandoffInputData] | None = None,
 ) -> Handoff[TContext]: ...
 
 
-def handoff(
-    agent: Agent[TContext],
-    tool_name_override: str | None = None,
-    tool_description_override: str | None = None,
-    on_handoff: OnHandoffWithInput[THandoffInput] | OnHandoffWithoutInput | None = None,
-    input_type: type[THandoffInput] | None = None,
-    input_filter: Callable[[HandoffInputData], HandoffInputData] | None = None,
+def handoff(agent: Agent[TContext],
+            tool_name_override: str | None = None,
+            tool_description_override: str | None = None,
+            on_handoff: OnHandoffWithInput[THandoffInput] | OnHandoffWithoutInput | None = None,
+            input_type: type[THandoffInput] | None = None,
+            input_filter: Callable[[HandoffInputData], HandoffInputData] | None = None,
 ) -> Handoff[TContext]:
     """Create a handoff from an agent.
 
@@ -168,9 +162,10 @@ def handoff(
         input_filter: a function that filters the inputs that are passed to the next agent.
     """
     assert (on_handoff and input_type) or not (on_handoff and input_type), (
-        "You must provide either both on_input and input_type, or neither"
-    )
+        "You must provide either both on_input and input_type, or neither")
+    
     type_adapter: TypeAdapter[Any] | None
+
     if input_type is not None:
         assert callable(on_handoff), "on_handoff must be callable"
         sig = inspect.signature(on_handoff)
@@ -187,9 +182,7 @@ def handoff(
             if len(sig.parameters) != 1:
                 raise UserError("on_handoff must take one argument: context")
 
-    async def _invoke_handoff(
-        ctx: RunContextWrapper[Any], input_json: str | None = None
-    ) -> Agent[Any]:
+    async def _invoke_handoff(ctx: RunContextWrapper[Any], input_json: str | None = None) -> Agent[Any]:
         if input_type is not None and type_adapter is not None:
             if input_json is None:
                 _error_tracing.attach_error_to_current_span(
@@ -203,8 +196,7 @@ def handoff(
             validated_input = _json.validate_json(
                 json_str=input_json,
                 type_adapter=type_adapter,
-                partial=False,
-            )
+                partial=False,)
             input_func = cast(OnHandoffWithInput[THandoffInput], on_handoff)
             if inspect.iscoroutinefunction(input_func):
                 await input_func(ctx, validated_input)
@@ -226,11 +218,5 @@ def handoff(
     # If there is a need, we can make this configurable in the future
     input_json_schema = ensure_strict_json_schema(input_json_schema)
 
-    return Handoff(
-        tool_name=tool_name,
-        tool_description=tool_description,
-        input_json_schema=input_json_schema,
-        on_invoke_handoff=_invoke_handoff,
-        input_filter=input_filter,
-        agent_name=agent.name,
-    )
+    return Handoff(tool_name=tool_name, tool_description=tool_description, input_json_schema=input_json_schema,
+                    on_invoke_handoff=_invoke_handoff, input_filter=input_filter, agent_name=agent.name,)

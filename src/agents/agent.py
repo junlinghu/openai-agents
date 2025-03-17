@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import dataclasses
-import inspect
-from collections.abc import Awaitable
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Callable, Generic, cast
+
+import inspect
+from collections.abc import Awaitable
 
 from .guardrail import InputGuardrail, OutputGuardrail
 from .handoffs import Handoff
@@ -12,6 +13,7 @@ from .items import ItemHelpers
 from .logger import logger
 from .model_settings import ModelSettings
 from .models.interface import Model
+
 from .run_context import RunContextWrapper, TContext
 from .tool import Tool, function_tool
 from .util import _transforms
@@ -21,30 +23,20 @@ if TYPE_CHECKING:
     from .lifecycle import AgentHooks
     from .result import RunResult
 
+"""An agent is an AI model configured with instructions, tools, guardrails, handoffs and more.
 
+We strongly recommend passing `instructions`, which is the "system prompt" for the agent. In
+addition, you can pass `handoff_description`, which is a human-readable description of the
+agent, used when the agent is used inside tools/handoffs.
+
+Agents are generic on the context type. The context is a (mutable) object you create. It is
+passed to tool functions, handoffs, guardrails, etc.
+"""
 @dataclass
 class Agent(Generic[TContext]):
-    """An agent is an AI model configured with instructions, tools, guardrails, handoffs and more.
-
-    We strongly recommend passing `instructions`, which is the "system prompt" for the agent. In
-    addition, you can pass `handoff_description`, which is a human-readable description of the
-    agent, used when the agent is used inside tools/handoffs.
-
-    Agents are generic on the context type. The context is a (mutable) object you create. It is
-    passed to tool functions, handoffs, guardrails, etc.
-    """
-
     name: str
-    """The name of the agent."""
 
-    instructions: (
-        str
-        | Callable[
-            [RunContextWrapper[TContext], Agent[TContext]],
-            MaybeAwaitable[str],
-        ]
-        | None
-    ) = None
+    instructions: (str  | Callable[ [RunContextWrapper[TContext], Agent[TContext]], MaybeAwaitable[str],]| None) = None
     """The instructions for the agent. Will be used as the "system prompt" when this agent is
     invoked. Describes what the agent should do, and how it responds.
 
@@ -103,12 +95,8 @@ class Agent(Generic[TContext]):
         """
         return dataclasses.replace(self, **kwargs)
 
-    def as_tool(
-        self,
-        tool_name: str | None,
-        tool_description: str | None,
-        custom_output_extractor: Callable[[RunResult], Awaitable[str]] | None = None,
-    ) -> Tool:
+    def as_tool(self, tool_name: str | None, tool_description: str | None,
+                custom_output_extractor: Callable[[RunResult], Awaitable[str]] | None = None,) -> Tool:
         """Transform this agent into a tool, callable by other agents.
 
         This is different from handoffs in two ways:
@@ -125,18 +113,11 @@ class Agent(Generic[TContext]):
                 provided, the last message from the agent will be used.
         """
 
-        @function_tool(
-            name_override=tool_name or _transforms.transform_string_function_style(self.name),
-            description_override=tool_description or "",
-        )
+        @function_tool(name_override=tool_name or _transforms.transform_string_function_style(self.name),
+                       description_override=tool_description or "",)
         async def run_agent(context: RunContextWrapper, input: str) -> str:
             from .run import Runner
-
-            output = await Runner.run(
-                starting_agent=self,
-                input=input,
-                context=context.context,
-            )
+            output = await Runner.run(starting_agent=self, input=input, context=context.context,)
             if custom_output_extractor:
                 return await custom_output_extractor(output)
 

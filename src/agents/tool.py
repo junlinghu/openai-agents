@@ -158,16 +158,14 @@ def function_tool(
     ...
 
 
-def function_tool(
-    func: ToolFunction[...] | None = None,
+def function_tool(func: ToolFunction[...] | None = None,
     *,
     name_override: str | None = None,
     description_override: str | None = None,
     docstring_style: DocstringStyle | None = None,
     use_docstring_info: bool = True,
     failure_error_function: ToolErrorFunction | None = default_tool_error_function,
-    strict_mode: bool = True,
-) -> FunctionTool | Callable[[ToolFunction[...]], FunctionTool]:
+    strict_mode: bool = True,) -> FunctionTool | Callable[[ToolFunction[...]], FunctionTool]:
     """
     Decorator to create a FunctionTool from a function. By default, we will:
     1. Parse the function signature to create a JSON schema for the tool's parameters.
