@@ -1,6 +1,6 @@
 # OpenAI Agents
 
-The OpenAI Agents SDK is a lightweight yet powerful framework for building multi-agent workflows.
+The OpenAI Agents is a framework for building multi-agent workflows.
 
 ### Core concepts:
 
